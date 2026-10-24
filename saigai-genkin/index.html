@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>災害時の現金　計算表</title>
+<script>
+/* 合言葉の入口：合言葉を入れるまで中身を出さない。一度入れたらこの端末で覚える。
+   EmuLog（合言葉つきのページ）のボタンから来たときは、入口を飛ばす。 */
+(function () {
+  var ok = false;
+  try { ok = window.localStorage.getItem('saigai-genkin-gate-v1') === '1'; } catch (e) { ok = false; }
+  try { if (/^https:\/\/mitsu-ma\.net\//.test(document.referrer || '')) { ok = true; window.localStorage.setItem('saigai-genkin-gate-v1', '1'); } } catch (e) { /* 覚えられない端末 */ }
+  if (!ok) document.documentElement.className += ' locked';
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#111; --bg:#f4efe4; --line:#111; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  /* 文字の大きさ：標準16px／大19px／特大22px（rem で全体が変わる） */
+  html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+  html[data-size="1"] { font-size: 19px; }
+  html[data-size="2"] { font-size: 22px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "BIZ UDPGothic", "BIZ UDPゴシック", "Yu Gothic", "游ゴシック", sans-serif;
+    font-size: 1.125rem; line-height: 1.5; word-break: auto-phrase; overflow-wrap: anywhere;
+  }
+  button, input, textarea { font-family: inherit; }
+  button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 14px 16px 28px; }
+  h1 { font-size: 1.75rem; line-height: 1.3; margin: 4px 0 14px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    width: 100%; min-height: 4.5rem; padding: 12px 16px; margin: 0;
+    font: inherit; font-size: 1.5rem; font-weight: 700; line-height: 1.3; text-align: center;
+    color: #fff; background: #1d2b3a; border: 3px solid var(--line); border-radius: 10px;
+    text-decoration: none; cursor: pointer;
+  }
+  .btn small { display: block; font-size: 1.125rem; font-weight: 400; margin-top: 2px; }
+  .btn:focus-visible, .item:focus-visible, .field:focus-visible, .tel188:focus-visible { outline: 4px solid #b36b00; outline-offset: 2px; }
+  .btn.sub { min-height: 3.75rem; font-size: 1.25rem; background: #fff; color: var(--ink); margin: 0 0 10px; }
+  .note { margin: 6px 2px 16px; font-size: 1.125rem; line-height: 1.4; }
+  .view { display: none; }
+  .view.on { display: block; }
+
+  /* チェックの画面 */
+  .back { margin-bottom: 12px; min-height: 3.75rem; background: #fff; color: var(--ink); }
+  .group { font-size: 1.375rem; font-weight: 700; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 3px solid var(--line); }
+  .item {
+    display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 4.5rem; margin: 0 0 10px; padding: 10px 12px;
+    font: inherit; text-align: left; color: var(--ink); background: #fff;
+    border: 2px solid var(--line); border-radius: 10px; cursor: pointer;
+  }
+  .item .mark {
+    flex: none; width: 40px; height: 40px; margin-top: 2px; border: 3px solid var(--line); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; line-height: 1; background: #fff; color: #fff;
+  }
+  .item .t { flex: 1; min-width: 0; }
+  .item .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .item .t b { display: block; font-size: 1.25rem; }
+  .item .t .d { display: block; font-size: 1.125rem; line-height: 1.4; }
+  .item .st { flex: none; font-size: 1.125rem; font-weight: 700; display: none; }
+  .item[aria-pressed="true"] { border-width: 5px; background: #e9e4d6; padding: 8px 10px; }
+  .item[aria-pressed="true"] .mark { background: #111; color: #fff; }
+  .item[aria-pressed="true"] .st { display: block; }
+
+  /* 記入欄 */
+  .flabel { display: block; margin: 16px 0 6px; font-size: 1.125rem; font-weight: 700; line-height: 1.3; }
+  .field {
+    display: block; width: 100%; padding: 10px 12px; margin: 0;
+    font: inherit; font-size: 1.125rem; line-height: 1.4; color: var(--ink);
+    background: #fff; border: 3px solid var(--line); border-radius: 8px;
+  }
+  textarea.field { min-height: 8rem; resize: vertical; }
+  .field::placeholder { color: #555; opacity: 1; }
+  .call { margin-top: 10px; background: #fff; color: var(--ink); text-decoration: none; }
+
+  .actions { margin-top: 24px; }
+  .msg { margin: 6px 2px 0; font-size: 1.125rem; font-weight: 700; min-height: 1.5em; }
+  .copybox { margin-top: 10px; }
+  .copybox .field { min-height: 8rem; }
+  .clear { margin-top: 24px; background: #fff; color: var(--ink); }
+
+  .warn { margin: 18px 0 0; padding: 12px 14px; border: 3px solid var(--line); border-radius: 10px; background: #fff; font-size: 1.125rem; line-height: 1.5; }
+  .warn p { margin: 0 0 4px; text-wrap: balance; }
+  .warn p:last-child { margin: 0; }
+  .tel188 {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 3.4em; min-height: 44px; padding: 0 10px; margin: 2px 2px;
+    font-weight: 700; color: var(--ink); background: #fff; border: 3px solid var(--line); border-radius: 8px; text-decoration: underline;
+  }
+  .hint { margin: 18px 0 0; padding: 12px 14px; border: 2px dashed var(--line); border-radius: 10px; font-size: 1.125rem; line-height: 1.5; }
+  .nw { white-space: nowrap; }
+  .hint p { margin: 0 0 6px; }
+  .hint p:last-child { margin: 0; }
+  .hint svg { width: 1.4em; height: 1.4em; vertical-align: -0.3em; margin: 0 2px; }
+
+  /* 合言葉の入口 */
+  #gate { display: none; }
+  html.locked #gate { display: block; }
+  html.locked #home, html.locked #check { display: none !important; }
+  .gate-in { display: block; width: 100%; margin: 0 0 14px; padding: 12px; font: inherit; font-size: 2rem; font-weight: 700; letter-spacing: .3em; text-align: center; color: var(--ink); background: #fff; border: 3px solid var(--line); border-radius: 10px; }
+  .gate-in:focus-visible { outline: 4px solid #b36b00; outline-offset: 2px; }
+
+  /* 計算の欄（わが家の額・分け方） */
+  .crow { display: grid; grid-template-columns: 1fr 7rem 2.2rem; align-items: center; gap: 8px; margin: 0 0 10px; }
+  .crow .lab { font-size: 1.25rem; font-weight: 700; line-height: 1.3; }
+  .crow .unit { font-size: 1.125rem; font-weight: 700; }
+  .srow { display: grid; grid-template-columns: 5.2rem 4.6rem 1.6rem 1fr; align-items: center; gap: 6px; margin: 0 0 10px; }
+  .srow .lab { font-size: 1.125rem; font-weight: 700; line-height: 1.3; }
+  .srow .unit { font-size: 1.125rem; font-weight: 700; }
+  .srow .amt { text-align: right; font-size: 1.25rem; font-weight: 700; white-space: nowrap; }
+  .num { text-align: right; font-size: 1.375rem; font-weight: 700; padding: 8px 10px; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin: 4px 0 6px; padding: 10px 14px; background: #fff; border: 4px solid var(--line); border-radius: 10px; }
+  .total .tl { font-size: 1.25rem; font-weight: 700; }
+  .total .tv { font-size: 1.75rem; font-weight: 700; white-space: nowrap; }
+  .total .tv.empty { font-size: 1.125rem; font-weight: 400; }
+  .ex { margin: 0 0 10px; padding: 10px 12px; background: #fff; border: 2px solid var(--line); border-radius: 10px; }
+  .ex b { display: block; font-size: 1.25rem; margin-bottom: 4px; }
+  .ex p { margin: 0; font-size: 1.125rem; line-height: 1.55; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 入口：合言葉 -->
+  <section id="gate" aria-label="合言葉の入口">
+    <h1>災害時の現金<br>計算表</h1>
+    <form id="gate-form" autocomplete="off">
+      <label class="flabel" for="gate-in">合言葉（数字4けた）を入れてください</label>
+      <input class="gate-in" id="gate-in" type="text" inputmode="numeric" maxlength="8" autocomplete="off">
+      <button type="submit" class="btn">開く</button>
+      <p class="msg" id="gate-msg" role="status" aria-live="polite"></p>
+    </form>
+    <p class="note">合言葉は、noteの記事の有料部分に書いてあります。</p>
+  </section>
+
+  <!-- 1画面目：大きなボタン3つ -->
+  <section id="home" class="view on" aria-label="はじめの画面">
+    <h1>災害時の現金<br>計算表</h1>
+    <a class="btn" href="#check" id="go-check">スマホでチェックする</a>
+    <p class="note">数を入れると、額が出ます。印もつけられます。</p>
+    <a class="btn" href="saigai-genkin-check-A4.pdf" download="災害時の現金_計算表_A4.pdf"><span>印刷する<span class="nw">（A4のPDF）</span></span></a>
+    <p class="note">コンビニ印刷にも使えます。</p>
+    <a class="btn" href="saigai-genkin-check.xlsx" download="災害時の現金_計算表.xlsx">Excelで保存する</a>
+    <p class="note">記入例と白紙の2枚です。額は自動で計算されます。</p>
+  </section>
+
+  <!-- 2画面目：スマホでチェック -->
+  <section id="check" class="view" aria-label="計算表">
+    <a class="btn back" href="#home" id="go-home">もどる</a>
+    <h1>わが家の現金の計算</h1>
+
+    <button type="button" class="btn sub" id="size-btn" aria-live="polite">文字を大きくする<small id="size-now">いま：標準</small></button>
+    <button type="button" class="btn sub" id="read-btn" hidden>読み上げる</button>
+
+    <div class="group">① わが家の額</div>
+    <p class="note">数を入れると、合計が出ます。</p>
+    <div id="calc"></div>
+    <div class="total"><span class="tl">合計</span><span class="tv" id="calc-total"></span></div>
+    <p class="note">人数 × 日数 × １日の額</p>
+
+    <div class="group">② 札と硬貨の分け方</div>
+    <p class="note">枚数を入れると、金額と合計が出ます。</p>
+    <div id="split"></div>
+    <div class="total"><span class="tl">合計</span><span class="tv" id="split-total"></span></div>
+
+    <div class="group">③ 置き場所</div>
+    <p class="note">持ち出し袋は、玄関など持ち出しやすい所に置きます。</p>
+    <div id="place"></div>
+
+    <div class="group">④ 月１回の点検</div>
+    <p class="note">毎月1日など、日を決めて数えます。</p>
+    <div id="list-check"></div>
+
+    <div class="group">⑤ 銀行に聞くこと</div>
+    <div id="list-bank"></div>
+
+    <div class="group">⑥ 一言メモ</div>
+    <div class="ex"><b>文例１　ふだんのうちに聞く</b><p>災害で通帳とカードをなくしたとき、<br>窓口で払戻しを受けるには、<br>何を持って行けばよいですか。</p></div>
+    <div class="ex"><b>文例２　災害のあとに窓口で</b><p>災害で、通帳と印鑑をなくしました。<br>本人確認の方法を教えてください。<br>払戻しをお願いできますか。</p></div>
+    <div class="ex"><b>文例３　家族に伝える</b><p>現金は、玄関の持ち出し袋と<br>〇〇に置いています。<br>取引銀行は〇〇銀行です。<br>番号のメモは〇〇にあります。</p></div>
+    <p class="note">文例は、そのまま送らず、言い換えて構いません。</p>
+
+    <div class="actions">
+      <button type="button" class="btn" id="share-btn" hidden>家族に送る</button>
+      <button type="button" class="btn" id="copy-btn" hidden>文字をコピーする</button>
+      <p class="msg" id="share-msg" role="status" aria-live="polite"></p>
+      <div class="copybox" id="copybox" hidden>
+        <label class="flabel" for="copy-text">この文字を長く押して「コピー」を選びます</label>
+        <textarea class="field" id="copy-text" readonly></textarea>
+      </div>
+    </div>
+
+    <button type="button" class="btn clear" id="clear-all">全部消す</button>
+
+    <div class="warn">
+      <p><b>額を決めておけば、止まった日にやることが見えてきます。</b></p>
+    </div>
+
+    <div class="hint">
+      <p><b>ホーム画面に追加</b>すると、次からすぐ開けます。</p>
+      <p>iPhone：<span class="nw">共有の絵
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/><path d="M12 15V3"/><path d="M8.5 6.5L12 3l3.5 3.5"/></svg></span>
+        <span class="nw">→「ホーム画面に追加」</span></p>
+      <p>Android：<span class="nw">︙の絵
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg></span>
+        <span class="nw">→「ホーム画面に追加」</span></p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'saigai-genkin-check-v1';   // 印
+  var KEYF = 'saigai-genkin-memo-v1';   // 入れた数と記入
+  var KEYS = 'saigai-genkin-size-v1';   // 文字の大きさ
+  var TITLE = '災害時の現金　計算表';
+  // わが家の額：[id, 名前, 単位, 例]
+  var CALC = [
+    ['c-people', '人数', '人', '2'],
+    ['c-days', '日数', '日', '3'],
+    ['c-day', '1日の額（1人）', '円', '1500']
+  ];
+  // 分け方：[id, 名前, 1枚の額, 例]
+  var SPLIT = [
+    ['s-1000', '千円札', 1000, '7'],
+    ['s-100', '100円玉', 100, '15'],
+    ['s-10', '10円玉', 10, '50']
+  ];
+  // 置き場所：[id, 名前, 例]
+  var PLACE = [
+    ['p-bag', '持ち出し袋', '例）3日分（9,000円）'],
+    ['p-home', '家の保管場所', '例）残り4日分（12,000円）'],
+    ['p-wallet', '財布', '例）ふだんの額']
+  ];
+  var CHECK = [
+    ['k1', '札の枚数が合っている', ''],
+    ['k2', '硬貨の枚数が合っている', ''],
+    ['k3', '傷んだお札がない', ''],
+    ['k4', '番号のメモが今のもの', ''],
+    ['k5', '家族が置き場所を知っている', ''],
+    ['k6', '使った分を、足しておいた', '']
+  ];
+  var BANK = [
+    ['b1', '通帳とカードなしで下ろす方法', ''],
+    ['b2', '本人と確かめる方法', ''],
+    ['b3', 'ATMが使えないときの窓口', ''],
+    ['b4', '取引銀行の名前を家族に伝えた', '']
+  ];
+  var GROUPS = [['月１回の点検', CHECK], ['銀行に聞くこと', BANK]];
+  var SIZES = ['標準', '大', '特大'];
+
+  // すべて try/catch。保存できない端末では、このページを開いている間だけ覚える
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* 使えない */ } }
+  function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) { /* 使えない */ } }
+  function lsObj(k) {
+    var s = lsGet(k);
+    if (!s) return {};
+    try { var o = JSON.parse(s); if (o && typeof o === 'object') return o; } catch (e) { /* 壊れている */ }
+    return {};
+  }
+  function $(id) { return document.getElementById(id); }
+
+  var memory = lsObj(KEY);
+  var fields = lsObj(KEYF);
+  var sizeIdx = 0;
+  (function () { var n = parseInt(lsGet(KEYS), 10); if (n === 1 || n === 2) sizeIdx = n; })();
+
+  /* ---------- 数の読み取りと表示 ---------- */
+  function toNum(s) {
+    s = String(s || '').replace(/[０-９．]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); });
+    s = s.replace(/[,，、\s円人日枚]/g, '');
+    if (!/^\d+(\.\d+)?$/.test(s)) return null;
+    return parseFloat(s);
+  }
+  function yen(n) { return Math.round(n).toLocaleString('ja-JP') + '円'; }
+
+  function inputRow(cls, id, label, unit, ex, extra) {
+    var row = document.createElement('div'); row.className = cls;
+    var lab = document.createElement('label'); lab.className = 'lab'; lab.setAttribute('for', id); lab.textContent = label;
+    var el = document.createElement('input');
+    el.type = 'text'; el.id = id; el.className = 'field num';
+    el.setAttribute('inputmode', 'numeric'); el.setAttribute('autocomplete', 'off');
+    el.placeholder = '例）' + ex;
+    el.value = fields[id] || '';
+    el.addEventListener('input', function () { fields[id] = el.value; lsSet(KEYF, JSON.stringify(fields)); calc(); });
+    var u = document.createElement('span'); u.className = 'unit'; u.textContent = unit;
+    row.appendChild(lab); row.appendChild(el); row.appendChild(u);
+    if (extra) row.appendChild(extra);
+    return row;
+  }
+  function renderCalc() {
+    var box = $('calc');
+    CALC.forEach(function (c) { box.appendChild(inputRow('crow', c[0], c[1], c[2], c[3])); });
+    var sb = $('split');
+    SPLIT.forEach(function (s) {
+      var amt = document.createElement('span'); amt.className = 'amt'; amt.id = 'amt-' + s[0];
+      sb.appendChild(inputRow('srow', s[0], s[1], '枚', s[3], amt));
+    });
+  }
+  function calc() {
+    var v = CALC.map(function (c) { return toNum(fields[c[0]]); });
+    var t = $('calc-total');
+    if (v[0] !== null && v[1] !== null && v[2] !== null) { t.textContent = yen(v[0] * v[1] * v[2]); t.className = 'tv'; }
+    else { t.textContent = '3つの数を入れると出ます'; t.className = 'tv empty'; }
+    var sum = 0, any = false;
+    SPLIT.forEach(function (s) {
+      var n = toNum(fields[s[0]]);
+      var a = $('amt-' + s[0]);
+      if (n !== null) { a.textContent = yen(n * s[2]); sum += n * s[2]; any = true; } else { a.textContent = ''; }
+    });
+    var st = $('split-total');
+    if (any) { st.textContent = yen(sum); st.className = 'tv'; } else { st.textContent = '枚数を入れると出ます'; st.className = 'tv empty'; }
+  }
+
+  /* ---------- 置き場所 ---------- */
+  function renderPlace() {
+    var box = $('place');
+    PLACE.forEach(function (p) {
+      var lab = document.createElement('label');
+      lab.className = 'flabel'; lab.setAttribute('for', p[0]); lab.textContent = p[1];
+      var el = document.createElement('input');
+      el.type = 'text'; el.id = p[0]; el.className = 'field'; el.placeholder = p[2];
+      el.setAttribute('autocomplete', 'off');
+      el.value = fields[p[0]] || '';
+      el.addEventListener('input', function () { fields[p[0]] = el.value; lsSet(KEYF, JSON.stringify(fields)); });
+      box.appendChild(lab); box.appendChild(el);
+    });
+  }
+
+  /* ---------- チェック項目 ---------- */
+  function render(listId, rows) {
+    var box = $(listId);
+    rows.forEach(function (r) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item';
+      b.id = 'item-' + r[0];
+      b.setAttribute('data-id', r[0]);
+      var mark = document.createElement('span'); mark.className = 'mark'; mark.setAttribute('aria-hidden', 'true'); mark.textContent = '✓';
+      var t = document.createElement('span'); t.className = 't';
+      var row = document.createElement('span'); row.className = 'row';
+      var bb = document.createElement('b'); bb.textContent = r[1];
+      var st = document.createElement('span'); st.className = 'st'; st.textContent = '済み';
+      row.appendChild(bb); row.appendChild(st); t.appendChild(row);
+      if (r[2]) {
+        var sp = document.createElement('span'); sp.className = 'd'; sp.textContent = r[2];
+        t.appendChild(sp);
+      }
+      b.appendChild(mark); b.appendChild(t);
+      b.addEventListener('click', function () {
+        if (memory[r[0]]) { delete memory[r[0]]; } else { memory[r[0]] = 1; }
+        lsSet(KEY, JSON.stringify(memory)); paint();
+      });
+      box.appendChild(b);
+    });
+  }
+  function paint() {
+    var items = document.querySelectorAll('.item');
+    for (var i = 0; i < items.length; i++) {
+      var id = items[i].getAttribute('data-id');
+      items[i].setAttribute('aria-pressed', memory[id] ? 'true' : 'false');
+    }
+  }
+  function fillFields() {
+    CALC.concat(SPLIT).concat(PLACE).forEach(function (f) { var el = $(f[0]); if (el) el.value = fields[f[0]] || ''; });
+    calc();
+  }
+
+  /* ---------- 家族に送る ---------- */
+  function buildText() {
+    var L = [TITLE];
+    var a = [];
+    CALC.forEach(function (c) { var n = toNum(fields[c[0]]); if (n !== null) a.push(c[1].replace('（1人）', '') + '：' + n.toLocaleString('ja-JP') + c[2]); });
+    var tt = $('calc-total').textContent;
+    if (a.length) { L.push('', '【わが家の額】'); L = L.concat(a); if (/円$/.test(tt)) L.push('合計：' + tt); }
+    var b = [];
+    SPLIT.forEach(function (s) { var n = toNum(fields[s[0]]); if (n !== null) b.push(s[1] + '：' + n.toLocaleString('ja-JP') + '枚（' + yen(n * s[2]) + '）'); });
+    if (b.length) { L.push('', '【札と硬貨の分け方】'); L = L.concat(b); L.push('合計：' + $('split-total').textContent); }
+    var p = [];
+    PLACE.forEach(function (f) { var v = String(fields[f[0]] || '').trim(); if (v) p.push(f[1] + '：' + v); });
+    if (p.length) { L.push('', '【置き場所】'); L = L.concat(p); }
+    GROUPS.forEach(function (g) {
+      var c = [];
+      g[1].forEach(function (r) { if (memory[r[0]]) c.push('・' + r[1]); });
+      if (c.length) { L.push('', '【' + g[0] + '】'); L = L.concat(c); }
+    });
+    if (L.length === 1) L.push('', '（まだありません）');
+    return L.join('\n');
+  }
+  function say(t) { $('share-msg').textContent = t || ''; }
+  function showCopyBox(text) {
+    var ta = $('copy-text');
+    ta.value = text;
+    $('copybox').hidden = false;
+    try { ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length); } catch (e) { /* 選べない */ }
+  }
+  function doCopy() {
+    var text = buildText();
+    var done = function () { say('コピーしました。LINEやメールに貼りつけてください。'); };
+    var fallback = function () {
+      showCopyBox(text);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      say(ok ? 'コピーしました。LINEやメールに貼りつけてください。' : '下の文字を長く押して、コピーしてください。');
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+        return;
+      }
+    } catch (e) { /* 次へ */ }
+    fallback();
+  }
+  function doShare() {
+    var text = buildText();
+    try {
+      var p = navigator.share({ title: TITLE, text: text });
+      if (p && p.then) {
+        p.then(function () { say(''); }, function (e) {
+          if (e && e.name === 'AbortError') { say(''); return; }   // 送る画面を閉じただけ
+          $('copy-btn').hidden = false; showCopyBox(text);
+          say('送れませんでした。文字をコピーして貼りつけてください。');
+        });
+      }
+    } catch (e) {
+      $('copy-btn').hidden = false; showCopyBox(text);
+      say('送れませんでした。文字をコピーして貼りつけてください。');
+    }
+  }
+
+  /* ---------- 文字の大きさ ---------- */
+  function paintSize() {
+    document.documentElement.setAttribute('data-size', String(sizeIdx));
+    $('size-now').textContent = 'いま：' + SIZES[sizeIdx];
+  }
+
+  /* ---------- 読み上げ ---------- */
+  var synth = null;
+  try { if (window.speechSynthesis && window.SpeechSynthesisUtterance) synth = window.speechSynthesis; } catch (e) { synth = null; }
+  var reading = false, readToken = 0;
+  function paintRead() { $('read-btn').textContent = reading ? '読み上げを止める' : '読み上げる'; }
+  function stopRead() {
+    readToken++;
+    try { if (synth) synth.cancel(); } catch (e) { /* 止められない */ }
+    reading = false; paintRead();
+  }
+  function startRead() {
+    var list = [];
+    GROUPS.forEach(function (g) { list.push(g[0] + '。'); g[1].forEach(function (r) { list.push(r[1] + '。'); }); });
+    var voice = null;
+    try { voice = (synth.getVoices() || []).filter(function (v) { return /^ja/i.test(v.lang); })[0] || null; } catch (e) { voice = null; }
+    readToken++;
+    var my = readToken;
+    try { synth.cancel(); } catch (e) { /* 続ける */ }
+    reading = true; paintRead();
+    list.forEach(function (t, i) {
+      var u = new window.SpeechSynthesisUtterance(t);
+      u.lang = 'ja-JP'; u.rate = 0.9;
+      if (voice) u.voice = voice;
+      if (i === list.length - 1) {
+        u.onend = u.onerror = function () { if (my === readToken) { reading = false; paintRead(); } };
+      }
+      try { synth.speak(u); } catch (e) { /* 読めない */ }
+    });
+  }
+
+  /* ---------- 画面の切り替え ---------- */
+  function view() {
+    var isCheck = location.hash === '#check';
+    $('home').className = 'view' + (isCheck ? '' : ' on');
+    $('check').className = 'view' + (isCheck ? ' on' : '');
+    if (!isCheck) stopRead();
+    window.scrollTo(0, 0);
+  }
+
+  renderCalc();
+  renderPlace();
+  render('list-check', CHECK);
+  render('list-bank', BANK);
+  calc();
+  paint();
+  paintSize();
+
+  $('size-btn').addEventListener('click', function () {
+    sizeIdx = (sizeIdx + 1) % 3;
+    lsSet(KEYS, String(sizeIdx));
+    paintSize();
+  });
+
+  if (synth) {
+    $('read-btn').hidden = false;
+    paintRead();
+    $('read-btn').addEventListener('click', function () { if (reading) { stopRead(); } else { startRead(); } });
+  }
+
+  var canShare = false;
+  try { canShare = (typeof navigator.share === 'function'); } catch (e) { canShare = false; }
+  if (canShare) { $('share-btn').hidden = false; } else { $('copy-btn').hidden = false; }
+  $('share-btn').addEventListener('click', doShare);
+  $('copy-btn').addEventListener('click', doCopy);
+
+  $('clear-all').addEventListener('click', function () {
+    var ok = true;
+    try { ok = window.confirm('印と記入を、全部消します。よろしいですか？'); } catch (e) { ok = true; }
+    if (!ok) return;
+    memory = {}; fields = {};
+    lsDel(KEY); lsDel(KEYF);
+    stopRead();
+    fillFields(); paint();
+    $('copy-text').value = ''; $('copybox').hidden = true; say('');
+  });
+
+  window.addEventListener('hashchange', view);
+  window.addEventListener('pagehide', stopRead);
+  view();
+
+  /* ---------- 合言葉の入口 ---------- */
+  $('gate-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = String($('gate-in').value || '').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/\s/g, '');
+    if (v === '7362') {
+      lsSet('saigai-genkin-gate-v1', '1');
+      document.documentElement.className = document.documentElement.className.replace(/\s*locked/g, '');
+      view();
+    } else {
+      $('gate-msg').textContent = '合言葉がちがいます。もう一度入れてください。';
+    }
+  });
+})();
+</script>
+</body>
+</html>
