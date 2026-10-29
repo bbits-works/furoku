@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>親の家の冬じたく　チェック表</title>
+<script>
+/* 合言葉の入口：合言葉を入れるまで中身を出さない。一度入れたらこの端末で覚える。
+   EmuLog（合言葉つきのページ）のボタンから来たときは、入口を飛ばす。 */
+(function () {
+  var ok = false;
+  try { ok = window.localStorage.getItem('fuyu-gate-v1') === '1'; } catch (e) { ok = false; }
+  try { if (/^https:\/\/mitsu-ma\.net\//.test(document.referrer || '')) { ok = true; window.localStorage.setItem('fuyu-gate-v1', '1'); } } catch (e) { /* 覚えられない端末 */ }
+  if (!ok) document.documentElement.className += ' locked';
+})();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#111; --bg:#f4efe4; --line:#111; }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  /* 文字の大きさ：標準16px／大19px／特大22px（rem で全体が変わる） */
+  html { font-size: 16px; -webkit-text-size-adjust: 100%; }
+  html[data-size="1"] { font-size: 19px; }
+  html[data-size="2"] { font-size: 22px; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "BIZ UDPGothic", "BIZ UDPゴシック", "Yu Gothic", "游ゴシック", sans-serif;
+    font-size: 1.125rem; line-height: 1.5; word-break: auto-phrase; overflow-wrap: anywhere;
+  }
+  button, input, textarea { font-family: inherit; }
+  button, a { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+  .wrap { max-width: 560px; margin: 0 auto; padding: 14px 16px 28px; }
+  h1 { font-size: 1.75rem; line-height: 1.3; margin: 4px 0 14px; }
+  .btn {
+    display: flex; align-items: center; justify-content: center; flex-direction: column;
+    width: 100%; min-height: 4.5rem; padding: 12px 16px; margin: 0;
+    font: inherit; font-size: 1.5rem; font-weight: 700; line-height: 1.3; text-align: center;
+    color: #fff; background: #1d2b3a; border: 3px solid var(--line); border-radius: 10px;
+    text-decoration: none; cursor: pointer;
+  }
+  .btn small { display: block; font-size: 1.125rem; font-weight: 400; margin-top: 2px; }
+  .btn:focus-visible, .item:focus-visible, .field:focus-visible, .tel188:focus-visible { outline: 4px solid #b36b00; outline-offset: 2px; }
+  .btn.sub { min-height: 3.75rem; font-size: 1.25rem; background: #fff; color: var(--ink); margin: 0 0 10px; }
+  .note { margin: 6px 2px 16px; font-size: 1.125rem; line-height: 1.4; }
+  .view { display: none; }
+  .view.on { display: block; }
+
+  /* チェックの画面 */
+  .back { margin-bottom: 12px; min-height: 3.75rem; background: #fff; color: var(--ink); }
+  .group { font-size: 1.375rem; font-weight: 700; margin: 22px 0 8px; padding-bottom: 4px; border-bottom: 3px solid var(--line); }
+  .item {
+    display: flex; align-items: flex-start; gap: 12px; width: 100%; min-height: 4.5rem; margin: 0 0 10px; padding: 10px 12px;
+    font: inherit; text-align: left; color: var(--ink); background: #fff;
+    border: 2px solid var(--line); border-radius: 10px; cursor: pointer;
+  }
+  .item .mark {
+    flex: none; width: 40px; height: 40px; margin-top: 2px; border: 3px solid var(--line); border-radius: 4px;
+    display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 700; line-height: 1; background: #fff; color: #fff;
+  }
+  .item .t { flex: 1; min-width: 0; }
+  .item .row { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .item .t b { display: block; font-size: 1.25rem; }
+  .item .t .d { display: block; font-size: 1.125rem; line-height: 1.4; }
+  .item .st { flex: none; font-size: 1.125rem; font-weight: 700; display: none; }
+  .item[aria-pressed="true"] { border-width: 5px; background: #e9e4d6; padding: 8px 10px; }
+  .item[aria-pressed="true"] .mark { background: #111; color: #fff; }
+  .item[aria-pressed="true"] .st { display: block; }
+
+  /* 記入欄 */
+  .flabel { display: block; margin: 16px 0 6px; font-size: 1.125rem; font-weight: 700; line-height: 1.3; }
+  .field {
+    display: block; width: 100%; padding: 10px 12px; margin: 0;
+    font: inherit; font-size: 1.125rem; line-height: 1.4; color: var(--ink);
+    background: #fff; border: 3px solid var(--line); border-radius: 8px;
+  }
+  textarea.field { min-height: 8rem; resize: vertical; }
+  .field::placeholder { color: #555; opacity: 1; }
+  .call { margin-top: 10px; font-size: 1.25rem; background: #fff; color: var(--ink); text-decoration: none; }
+
+  .actions { margin-top: 24px; }
+  .msg { margin: 6px 2px 0; font-size: 1.125rem; font-weight: 700; min-height: 1.5em; }
+  .copybox { margin-top: 10px; }
+  .copybox .field { min-height: 8rem; }
+  .clear { margin-top: 24px; background: #fff; color: var(--ink); }
+
+  .warn { margin: 18px 0 0; padding: 12px 14px; border: 3px solid var(--line); border-radius: 10px; background: #fff; font-size: 1.125rem; line-height: 1.5; }
+  .warn p { margin: 0 0 4px; text-wrap: balance; }
+  .warn p:last-child { margin: 0; }
+  .tel188 {
+    display: inline-flex; align-items: center; justify-content: center; min-width: 3.4em; min-height: 44px; padding: 0 10px; margin: 2px 2px;
+    font-weight: 700; color: var(--ink); background: #fff; border: 3px solid var(--line); border-radius: 8px; text-decoration: underline;
+  }
+  .hint { margin: 18px 0 0; padding: 12px 14px; border: 2px dashed var(--line); border-radius: 10px; font-size: 1.125rem; line-height: 1.5; }
+  .nw { white-space: nowrap; }
+  .hint p { margin: 0 0 6px; }
+  .hint p:last-child { margin: 0; }
+  .hint svg { width: 1.4em; height: 1.4em; vertical-align: -0.3em; margin: 0 2px; }
+
+  .out { margin: 12px 0 6px; padding: 12px 14px; border: 3px solid var(--line); border-radius: 10px; background: #fff; font-size: 1.25rem; font-weight: 700; line-height: 1.5; }
+  .out:empty { display: none; }
+  .crow { margin: 0 0 14px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: #fff; }
+  .crow .flabel { margin-top: 8px; }
+  .crow .flabel:first-child { margin-top: 0; }
+  .lim { width: 100%; border-collapse: collapse; background: #fff; font-size: 1.125rem; margin: 4px 0 6px; }
+  .lim th, .lim td { border: 2px solid var(--line); padding: 6px 10px; text-align: left; }
+  .lim td + td, .lim th + th { text-align: right; }
+  .ask p { margin: 0 0 10px; padding: 10px 12px; background: #fff; border-left: 6px solid var(--line); font-size: 1.125rem; line-height: 1.5; }
+
+  /* 合言葉の入口 */
+  #gate { display: none; }
+  html.locked #gate { display: block; }
+  html.locked #home, html.locked #check { display: none !important; }
+  .gate-in { display: block; width: 100%; margin: 0 0 14px; padding: 12px; font: inherit; font-size: 2rem; font-weight: 700; letter-spacing: .3em; text-align: center; color: var(--ink); background: #fff; border: 3px solid var(--line); border-radius: 10px; }
+  .gate-in:focus-visible { outline: 4px solid #b36b00; outline-offset: 2px; }
+  .subh { font-size: 1.25rem; font-weight: 700; margin: 18px 0 8px; }
+  .cmp { margin: 0 0 12px; padding: 10px 12px; border: 2px solid var(--line); border-radius: 10px; background: #fff; }
+  .cmp b { display: block; font-size: 1.25rem; margin-bottom: 4px; }
+  .cmp p { margin: 0; font-size: 1.125rem; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- 入口：合言葉 -->
+  <section id="gate" aria-label="合言葉の入口">
+    <h1>親の家の冬じたく<br>チェック表</h1>
+    <form id="gate-form" autocomplete="off">
+      <label class="flabel" for="gate-in">合言葉（数字4けた）を入れてください</label>
+      <input class="gate-in" id="gate-in" type="text" inputmode="numeric" maxlength="8" autocomplete="off">
+      <button type="submit" class="btn">開く</button>
+      <p class="msg" id="gate-msg" role="status" aria-live="polite"></p>
+    </form>
+    <p class="note">合言葉は、noteの記事の有料部分に書いてあります。</p>
+  </section>
+
+  <!-- 1画面目：大きなボタン -->
+  <section id="home" class="view on" aria-label="はじめの画面">
+    <h1>親の家の冬じたく<br>チェック表</h1>
+    <a class="btn" href="#check" id="go-check">スマホでチェックする</a>
+    <p class="note">チェック表と回る順番に、印を付けられます。</p>
+    <a class="btn" href="fuyu-A4.pdf" download="親の家の冬じたく_チェック表_A4.pdf"><span>印刷する<span class="nw">（A4のPDF）</span></span></a>
+    <p class="note">チェック表と、回る順番・早見表の2枚。コンビニ印刷にも使えます。</p>
+    <a class="btn" href="fuyu-A3.pdf" download="親の家の冬じたく_チェック表_A3横.pdf"><span>A3で印刷する<span class="nw">（A3横のPDF）</span></span></a>
+    <p class="note">2枚を1枚に並べた、大きな字の版です。</p>
+    <a class="btn" href="fuyu.xlsx" download="親の家の冬じたく_チェック表.xlsx">Excelで保存する</a>
+    <p class="note">チェック表と、回る順番・早見表の2枚です。パソコンで書き込めます。</p>
+  </section>
+
+  <!-- 2画面目：スマホでチェック -->
+  <section id="check" class="view" aria-label="チェック表">
+    <a class="btn back" href="#home" id="go-home">もどる</a>
+    <h1>冬じたくのチェック表</h1>
+
+    <button type="button" class="btn sub" id="size-btn" aria-live="polite">文字を大きくする<small id="size-now">いま：標準</small></button>
+    <button type="button" class="btn sub" id="read-btn" hidden>読み上げる</button>
+
+    <p class="note">お風呂・暖房・コンセントの３つの場所を見ます。終わった所に印を付けます。</p>
+    <div class="subh">【お風呂まわり】</div>
+    <div id="list-q0"></div>
+    <div class="subh">【暖房器具】</div>
+    <div id="list-q1"></div>
+    <div class="subh">【コンセントとブレーカー】</div>
+    <div id="list-q2"></div>
+
+    <div class="group">回る順番５つ</div>
+    <p class="note">帰省１回・30分で回る順番です。</p>
+    <div id="list-st"></div>
+
+    <div class="group">W数の早見表</div>
+    <div class="cmp"><b>電気ストーブ</b><p>消費電力：200〜800W</p><p>1時間の電気代：約6〜25円</p><p>気をつけること：周りに物を置かない</p></div>
+    <div class="cmp"><b>温風の暖房機</b><p>消費電力：600〜1,200W</p><p>1時間の電気代：約19〜37円</p><p>気をつけること：壁に直接さす</p></div>
+    <div class="cmp"><b>電気こたつ</b><p>消費電力：500W</p><p>1時間の電気代：約16円まで</p><p>気をつけること：コードを踏まない</p></div>
+    <div class="cmp"><b>電子レンジ</b><p>消費電力：1,500W</p><p>1時間の電気代：短い時間で使う</p><p>気をつけること：暖房と同じ回路で重ねない</p></div>
+    <p class="note">消費電力はNITEの目安。電気代は1kWhあたり31円（目安の単価）で計算しました。</p>
+
+    <div class="group">親と決めておく一言</div>
+    <div id="memo"></div>
+
+    <div class="actions">
+      <button type="button" class="btn" id="share-btn" hidden>家族に送る</button>
+      <button type="button" class="btn" id="copy-btn" hidden>文字をコピーする</button>
+      <p class="msg" id="share-msg" role="status" aria-live="polite"></p>
+      <div class="copybox" id="copybox" hidden>
+        <label class="flabel" for="copy-text">この文字を長く押して「コピー」を選びます</label>
+        <textarea class="field" id="copy-text" readonly></textarea>
+      </div>
+    </div>
+
+    <button type="button" class="btn clear" id="clear-all">全部消す</button>
+
+    <div class="warn">
+      <p><b>焦げや変色を見つけたら、使うのをやめて、電気店に相談します。</b></p>
+      <p><b>壁のコンセントは2口で1,500W、１つの回路は2,000Wまでが目安です。</b></p>
+    </div>
+
+    <div class="hint">
+      <p><b>ホーム画面に追加</b>すると、次からすぐ開けます。</p>
+      <p>iPhone：<span class="nw">共有の絵
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 10H6a1 1 0 0 0-1 1v9a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-9a1 1 0 0 0-1-1h-2"/><path d="M12 15V3"/><path d="M8.5 6.5L12 3l3.5 3.5"/></svg></span>
+        <span class="nw">→「ホーム画面に追加」</span></p>
+      <p>Android：<span class="nw">︙の絵
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="12" cy="5" r="2.2"/><circle cx="12" cy="12" r="2.2"/><circle cx="12" cy="19" r="2.2"/></svg></span>
+        <span class="nw">→「ホーム画面に追加」</span></p>
+    </div>
+  </section>
+
+</div>
+
+<script>
+(function () {
+  var KEY = 'fuyu-check-v1';      // 印
+  var KEYF = 'fuyu-memo-v1';      // 記入
+  var KEYS = 'fuyu-size-v1';      // 文字の大きさ
+  var QG = [["お風呂まわり", [["j1", "入る前に、脱衣所を暖めている", ""], ["j2", "脱衣所と居間に、温度計がある", ""], ["j3", "湯は41度以下にしている", ""], ["j4", "つかるのは10分までにしている", ""], ["j5", "入る前に、家族へひと声かけている", ""], ["j6", "浴室の段差と手すりを見た", ""]]], ["暖房器具", [["j7", "ヒーターは、壁のコンセントに直接さしている", ""], ["j8", "脱衣所で、延長コードやタップを使っていない", ""], ["j9", "周りに、燃えやすい物を置いていない", ""], ["j10", "コードを踏んだり、束ねたりしていない", ""], ["j11", "倒れたら止まるか、確かめた", ""], ["j12", "リコールの対象でないか、調べた", ""]]], ["コンセントとブレーカー", [["j13", "プラグのほこりを、ふいた", ""], ["j14", "プラグやコンセントに、焦げ・変色・ゆるみがない", ""], ["j15", "タップの合計が、1,500W以内", ""], ["j16", "１つの回路の合計が、2,000W以内", ""], ["j17", "分電盤の場所を、親と確かめた", ""]]]];
+  var ST = [["s1", "１　分電盤の場所を、親と確かめる", ""], ["s2", "２　居間の暖房とコンセントを見る", ""], ["s3", "３　台所のコンセントを見る", ""], ["s4", "４　脱衣所と浴室を見る", ""], ["s5", "５　寝室の暖房を見る", ""]];
+  var GROUPS = QG.concat([['回る順番５つ', ST]]);
+  var MEMO0 = "「お風呂に入る前に、ひと声かけてね。長いときは、のぞきに行くね。」";   // 家族への一言メモ（書き直せる。全部消すで元の文に戻る）
+  var SIZES = ['標準', '大', '特大'];
+
+  // すべて try/catch。保存できない端末では、このページを開いている間だけ覚える
+  function lsGet(k) { try { return window.localStorage.getItem(k); } catch (e) { return null; } }
+  function lsSet(k, v) { try { window.localStorage.setItem(k, v); } catch (e) { /* 使えない */ } }
+  function lsDel(k) { try { window.localStorage.removeItem(k); } catch (e) { /* 使えない */ } }
+  function lsObj(k) {
+    var s = lsGet(k);
+    if (!s) return {};
+    try { var o = JSON.parse(s); if (o && typeof o === 'object') return o; } catch (e) { /* 壊れている */ }
+    return {};
+  }
+  function $(id) { return document.getElementById(id); }
+
+  var memory = lsObj(KEY);
+  var fields = lsObj(KEYF);
+  var sizeIdx = 0;
+  (function () { var n = parseInt(lsGet(KEYS), 10); if (n === 1 || n === 2) sizeIdx = n; })();
+
+  /* ---------- チェック項目 ---------- */
+  function render(listId, rows) {
+    var box = $(listId);
+    rows.forEach(function (r) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'item';
+      b.id = 'item-' + r[0];
+      b.setAttribute('data-id', r[0]);
+      var mark = document.createElement('span'); mark.className = 'mark'; mark.setAttribute('aria-hidden', 'true'); mark.textContent = '✓';
+      var t = document.createElement('span'); t.className = 't';
+      var row = document.createElement('span'); row.className = 'row';
+      var bb = document.createElement('b'); bb.textContent = r[1];
+      var st = document.createElement('span'); st.className = 'st'; st.textContent = '済み';
+      row.appendChild(bb); row.appendChild(st); t.appendChild(row);
+      if (r[2]) {
+        var sp = document.createElement('span'); sp.className = 'd'; sp.textContent = r[2];
+        t.appendChild(sp);
+      }
+      b.appendChild(mark); b.appendChild(t);
+      b.addEventListener('click', function () {
+        if (memory[r[0]]) { delete memory[r[0]]; } else { memory[r[0]] = 1; }
+        lsSet(KEY, JSON.stringify(memory)); paint();
+      });
+      box.appendChild(b);
+    });
+  }
+  function paint() {
+    var items = document.querySelectorAll('.item');
+    for (var i = 0; i < items.length; i++) {
+      var id = items[i].getAttribute('data-id');
+      items[i].setAttribute('aria-pressed', memory[id] ? 'true' : 'false');
+    }
+  }
+
+  /* ---------- 家族への一言メモ（書き直せる） ---------- */
+  function renderFields() {
+    var box = $('memo');
+    var lab = document.createElement('label');
+    lab.className = 'flabel'; lab.setAttribute('for', 'f-memo'); lab.textContent = '◯月◯日を書き直して、家族に送れます。';
+    var el = document.createElement('textarea'); el.rows = 5;
+    el.id = 'f-memo'; el.className = 'field';
+    el.setAttribute('autocomplete', 'off');
+    el.setAttribute('autocapitalize', 'off');
+    el.value = (typeof fields['f-memo'] === 'string') ? fields['f-memo'] : MEMO0;
+    el.addEventListener('input', function () {
+      fields['f-memo'] = el.value;
+      lsSet(KEYF, JSON.stringify(fields));
+    });
+    box.appendChild(lab); box.appendChild(el);
+  }
+  function fillFields() {
+    var el = $('f-memo'); if (el) el.value = (typeof fields['f-memo'] === 'string') ? fields['f-memo'] : MEMO0;
+  }
+
+  /* ---------- 家族に送る（一言メモの文を送る） ---------- */
+  function buildText() {
+    return String((typeof fields['f-memo'] === 'string') ? fields['f-memo'] : MEMO0).trim();
+  }
+  function say(t) { $('share-msg').textContent = t || ''; }
+  function showCopyBox(text) {
+    var ta = $('copy-text');
+    ta.value = text;
+    $('copybox').hidden = false;
+    try { ta.focus(); ta.select(); ta.setSelectionRange(0, ta.value.length); } catch (e) { /* 選べない */ }
+  }
+  function doCopy() {
+    var text = buildText();
+    var done = function () { say('コピーしました。LINEやメールに貼りつけてください。'); };
+    var fallback = function () {
+      showCopyBox(text);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+      say(ok ? 'コピーしました。LINEやメールに貼りつけてください。' : '下の文字を長く押して、コピーしてください。');
+    };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, fallback);
+        return;
+      }
+    } catch (e) { /* 次へ */ }
+    fallback();
+  }
+  function doShare() {
+    var text = buildText();
+    try {
+      var p = navigator.share({ title: '親の家の冬じたく　チェック表', text: text });
+      if (p && p.then) {
+        p.then(function () { say(''); }, function (e) {
+          if (e && e.name === 'AbortError') { say(''); return; }   // 送る画面を閉じただけ
+          $('copy-btn').hidden = false; showCopyBox(text);
+          say('送れませんでした。文字をコピーして貼りつけてください。');
+        });
+      }
+    } catch (e) {
+      $('copy-btn').hidden = false; showCopyBox(text);
+      say('送れませんでした。文字をコピーして貼りつけてください。');
+    }
+  }
+
+  /* ---------- 文字の大きさ ---------- */
+  function paintSize() {
+    document.documentElement.setAttribute('data-size', String(sizeIdx));
+    $('size-now').textContent = 'いま：' + SIZES[sizeIdx];
+  }
+
+  /* ---------- 読み上げ ---------- */
+  var synth = null;
+  try { if (window.speechSynthesis && window.SpeechSynthesisUtterance) synth = window.speechSynthesis; } catch (e) { synth = null; }
+  var reading = false, readToken = 0;
+  function paintRead() { $('read-btn').textContent = reading ? '読み上げを止める' : '読み上げる'; }
+  function stopRead() {
+    readToken++;
+    try { if (synth) synth.cancel(); } catch (e) { /* 止められない */ }
+    reading = false; paintRead();
+  }
+  function startRead() {
+    var list = [];
+    GROUPS.forEach(function (g) { list.push(g[0] + '。'); g[1].forEach(function (r) { list.push(r[1] + '。'); }); });
+    var voice = null;
+    try { voice = (synth.getVoices() || []).filter(function (v) { return /^ja/i.test(v.lang); })[0] || null; } catch (e) { voice = null; }
+    readToken++;
+    var my = readToken;
+    try { synth.cancel(); } catch (e) { /* 続ける */ }
+    reading = true; paintRead();
+    list.forEach(function (t, i) {
+      var u = new window.SpeechSynthesisUtterance(t);
+      u.lang = 'ja-JP'; u.rate = 0.9;
+      if (voice) u.voice = voice;
+      if (i === list.length - 1) {
+        u.onend = u.onerror = function () { if (my === readToken) { reading = false; paintRead(); } };
+      }
+      try { synth.speak(u); } catch (e) { /* 読めない */ }
+    });
+  }
+
+  /* ---------- 画面の切り替え ---------- */
+  function view() {
+    var isCheck = location.hash === '#check';
+    $('home').className = 'view' + (isCheck ? '' : ' on');
+    $('check').className = 'view' + (isCheck ? ' on' : '');
+    if (!isCheck) stopRead();
+    window.scrollTo(0, 0);
+  }
+
+  QG.forEach(function (g, i) { render('list-q' + i, g[1]); });
+  render('list-st', ST);
+  renderFields();
+  paint();
+  paintSize();
+
+  $('size-btn').addEventListener('click', function () {
+    sizeIdx = (sizeIdx + 1) % 3;
+    lsSet(KEYS, String(sizeIdx));
+    paintSize();
+  });
+
+  if (synth) {
+    $('read-btn').hidden = false;
+    paintRead();
+    $('read-btn').addEventListener('click', function () { if (reading) { stopRead(); } else { startRead(); } });
+  }
+
+  var canShare = false;
+  try { canShare = (typeof navigator.share === 'function'); } catch (e) { canShare = false; }
+  if (canShare) { $('share-btn').hidden = false; } else { $('copy-btn').hidden = false; }
+  $('share-btn').addEventListener('click', doShare);
+  $('copy-btn').addEventListener('click', doCopy);
+
+  $('clear-all').addEventListener('click', function () {
+    var ok = true;
+    try { ok = window.confirm('印と記入を、全部消します。よろしいですか？'); } catch (e) { ok = true; }
+    if (!ok) return;
+    memory = {}; fields = {};
+    lsDel(KEY); lsDel(KEYF);
+    stopRead();
+    fillFields(); paint();
+    $('copy-text').value = ''; $('copybox').hidden = true; say('');
+  });
+
+  window.addEventListener('hashchange', view);
+  window.addEventListener('pagehide', stopRead);
+  view();
+
+  /* ---------- 合言葉の入口 ---------- */
+  $('gate-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var v = String($('gate-in').value || '').replace(/[０-９]/g, function (c) { return String.fromCharCode(c.charCodeAt(0) - 0xFEE0); }).replace(/\s/g, '');
+    if (v === '4172') {
+      lsSet('fuyu-gate-v1', '1');
+      document.documentElement.className = document.documentElement.className.replace(/\s*locked/g, '');
+      view();
+    } else {
+      $('gate-msg').textContent = '合言葉がちがいます。もう一度入れてください。';
+    }
+  });
+})();
+</script>
+</body>
+</html>
