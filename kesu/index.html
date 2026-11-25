@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>消すかの受け取り</title>
+<!--
+  スレッズの送り済みの返事を「消す／消さない」ボタンを押すと開くページ（2026-11-26。松兄の決まり「投稿を見て決める判断は全部ntfyで」）。
+  形は furoku/btn/（送る／やめる）と同じ。押した瞬間にこの画面で「受け取りました」→「消しました／残しました」を見せる。
+  宛先（指示用トピック・知らせのトピック）はこのファイルに書かない。通知のリンクの # の後ろだけが持つ（サーバーへは送られない）。
+    #a=del|keep  &t=トークン  &u=相手の名前  &c=指示用トピック  &n=知らせのトピック
+  合図の形は受け口（ntfy-command-listener.ps1）の「tdel:del-<トークン>」「tdel:keep-<トークン>」。2回目以降は受け口が動かさない。
+-->
+<style>
+  :root { --bg:#14213d; --card:#1d2d50; --text:#f1f3f8; --sub:#b8c2d9; --ok:#4cd07d; --wait:#ffd166; --ng:#ff7b7b; }
+  * { box-sizing:border-box; }
+  html, body { margin:0; background:var(--bg); color:var(--text); font-family:-apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif; }
+  main { max-width:560px; margin:0 auto; padding:28px 16px 40px; }
+  .mark { font-size:88px; line-height:1; text-align:center; margin:12px 0 8px; }
+  h1 { font-size:34px; line-height:1.35; text-align:center; margin:0 0 14px; font-weight:800; }
+  .who { font-size:24px; text-align:center; margin:0 0 22px; color:var(--sub); word-break:break-all; }
+  .card { background:var(--card); border-radius:16px; padding:18px 18px; font-size:21px; line-height:1.6; margin:0 0 14px; }
+  .steps { list-style:none; padding:0; margin:0; }
+  .steps li { font-size:21px; line-height:1.5; padding:10px 0; border-bottom:1px solid rgba(255,255,255,.08); display:flex; gap:10px; }
+  .steps li:last-child { border-bottom:0; }
+  .steps .s { width:1.6em; flex:none; text-align:center; }
+  .done { color:var(--ok); } .now { color:var(--wait); } .bad { color:var(--ng); } .todo { color:var(--sub); }
+  button { display:block; width:100%; font-size:24px; padding:16px; border-radius:14px; border:0; background:#3a86ff; color:#fff; font-weight:700; margin-top:10px; }
+  [hidden] { display:none !important; }
+  .small { font-size:16px; color:var(--sub); text-align:center; margin-top:18px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="mark" id="mark">⏳</div>
+  <h1 id="head">受け取っています…</h1>
+  <p class="who" id="who"></p>
+  <div class="card">
+    <ul class="steps">
+      <li id="st1"><span class="s">・</span><span>ボタンの合図をPCへ届ける</span></li>
+      <li id="st2"><span class="s">・</span><span>PCが受け取る</span></li>
+      <li id="st3"><span class="s">・</span><span id="st3t">スレッズから消す</span></li>
+    </ul>
+  </div>
+  <div class="card" id="msg">少しお待ちください。</div>
+  <button id="retry" hidden>もう一度、合図を届ける</button>
+  <p class="small" id="foot">この画面は閉じても大丈夫です。</p>
+</main>
+<script>
+(function () {
+  var SERVER = 'https://ntfy.sh';
+  var p = {};
+  location.hash.replace(/^#/, '').split('&').forEach(function (kv) {
+    var i = kv.indexOf('='); if (i > 0) { try { p[kv.slice(0, i)] = decodeURIComponent(kv.slice(i + 1)); } catch (e) {} }
+  });
+  var act = p.a, tok = p.t || '', user = p.u || '', cmdTopic = p.c || '', infoTopic = p.n || '';
+  var $ = function (id) { return document.getElementById(id); };
+  var who = user ? '@' + user + ' さん' : '';
+  var isDel = act === 'del';
+  var okForm = /^(del|keep)$/.test(act || '') && /^[0-9A-Za-z]{6,16}$/.test(tok) && /^[0-9A-Za-z_-]{1,64}$/.test(cmdTopic);
+
+  function step(n, cls, sym) { var li = $('st' + n); li.className = cls; li.querySelector('.s').textContent = sym; }
+  function show(mark, head, msg) { $('mark').textContent = mark; $('head').textContent = head; if (msg != null) $('msg').textContent = msg; }
+
+  if (!okForm) { show('⚠️', 'このリンクは使えません', '通知のボタンから開き直してください。'); step(1, 'bad', '×'); return; }
+  $('who').textContent = who ? who + 'への返事' : '';
+  $('st3t').textContent = isDel ? 'スレッズから消す' : 'そのまま残す';
+  document.title = isDel ? '消す：受け取り' : '消さない：受け取り';
+
+  // 同じボタンを何度開いても、合図は1回だけ（10分以内）
+  var key = 'tdel-' + act + '-' + tok, sentAt = 0;
+  try { sentAt = parseInt(localStorage.getItem(key) || '0', 10) || 0; } catch (e) {}
+  var nowSec = function () { return Math.floor(Date.now() / 1000); };
+  var since = 0, finished = false, sawPc = false;
+
+  function received(again) {
+    step(1, 'done', '✓'); step(2, 'now', '…'); step(3, 'todo', '・');
+    if (isDel) show('✅', '受け取りました', (again ? 'このボタンは、さっき受け取っています。' : '') + (who ? who + 'への返事を' : 'この返事を') + '消します。もう押さなくて大丈夫です。消し終わったら、この画面に「消しました」と出ます（1〜3分ほど）。');
+    else show('✅', '受け取りました', (who ? who + 'への返事は' : 'この返事は') + '消さずに、そのまま残します。もう押さなくて大丈夫です。');
+    $('retry').hidden = true;
+  }
+
+  function post() {
+    step(1, 'now', '…'); show('⏳', '受け取っています…', '合図をPCへ届けています。');
+    var ctl = ('AbortController' in window) ? new AbortController() : null;
+    var timer = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
+    fetch(SERVER + '/' + cmdTopic, { method: 'POST', body: 'tdel:' + act + '-' + tok, signal: ctl ? ctl.signal : undefined })
+      .then(function (r) {
+        clearTimeout(timer);
+        if (!r.ok) throw new Error('状態 ' + r.status);
+        return r.json().catch(function () { return {}; });
+      })
+      .then(function (j) {
+        var t = (j && j.time) ? j.time : nowSec();
+        since = t - 2;
+        try { localStorage.setItem(key, String(t)); } catch (e) {}
+        received(false); listen();
+      })
+      .catch(function (e) {
+        clearTimeout(timer);
+        step(1, 'bad', '×');
+        show('⚠️', '届けられませんでした', '電波の弱い所かもしれません。下のボタンで、もう一度届けます。（' + (e && e.message ? e.message : '通信の失敗') + '）');
+        $('retry').hidden = false;
+      });
+  }
+  $('retry').onclick = post;
+
+  // PCの知らせ（知らせのトピック）を読んで、受け取り・結果をこの画面に出す
+  function judge(m) {
+    var title = m.title || '', body = m.message || '';
+    if (title.indexOf('【スレッズ】') < 0) return;
+    if (!/消す|消さない|消しました|残しました|消せません/.test(title + ' ' + body)) return;
+    var text = title + ' ' + body;
+    if (user && text.indexOf('@' + user) < 0) return;
+    if (/受け取りました|受け取り済み/.test(title)) {
+      sawPc = true; step(2, 'done', '✓');
+      if (isDel) step(3, 'now', '…'); else { step(3, 'done', '✓'); finished = true; show('✅', '残しました', (who ? who + 'への' : 'この') + '返事は、消さずにそのまま残します。'); }
+      return;
+    }
+    var fin = /結果|もう済んで/.test(title);
+    if (!fin) return;
+    finished = true; step(2, 'done', '✓');
+    var good = isDel ? (/消しました/.test(body) && !/消せません/.test(body)) : /残しました|残して/.test(body);
+    step(3, good ? 'done' : 'bad', good ? '✓' : '×');
+    show(good ? '🎉' : '⚠️', good ? (isDel ? '消しました' : '残しました') : '消せませんでした', body);
+    $('foot').textContent = 'この画面は閉じて大丈夫です。';
+  }
+
+  function listen() {
+    if (!infoTopic || !/^[0-9A-Za-z_-]{1,64}$/.test(infoTopic)) return;
+    var startedAt = Date.now(), es = null, pollTimer = null;
+    function stop() { if (es) { try { es.close(); } catch (e) {} } if (pollTimer) clearInterval(pollTimer); }
+    function tick() {
+      if (finished) { stop(); return; }
+      var min = (Date.now() - startedAt) / 60000;
+      if (min > 1.5 && !sawPc) $('msg').textContent = '合図はPCへ届いています。PCの返事を待っています。もう押さなくて大丈夫です。';
+      if (min > 15) { stop(); $('msg').textContent = '合図は届いています。結果はスマホの通知でも知らせます。この画面は閉じて大丈夫です。'; }
+    }
+    var tickTimer = setInterval(function () { tick(); if (finished) clearInterval(tickTimer); }, 5000);
+    var seen = {};
+    function handle(m) { if (!m || m.event !== 'message' || seen[m.id]) return; seen[m.id] = 1; judge(m); if (finished) stop(); }
+    if ('EventSource' in window) {
+      es = new EventSource(SERVER + '/' + infoTopic + '/sse?since=' + since);
+      es.onmessage = function (e) { try { handle(JSON.parse(e.data)); } catch (x) {} };
+    }
+    // 予備：つながりが切れても読めるよう、20秒ごとに読み直す
+    pollTimer = setInterval(function () {
+      if (finished) return;
+      fetch(SERVER + '/' + infoTopic + '/json?poll=1&since=' + since).then(function (r) { return r.text(); }).then(function (t) {
+        t.split('\n').forEach(function (l) { if (l.trim()) { try { handle(JSON.parse(l)); } catch (x) {} } });
+      }).catch(function () {});
+    }, 20000);
+  }
+
+  if (sentAt && nowSec() - sentAt < 600) { since = sentAt - 2; received(true); listen(); }
+  else post();
+})();
+</script>
+</body>
+</html>
